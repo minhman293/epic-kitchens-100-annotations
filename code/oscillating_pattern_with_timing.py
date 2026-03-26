@@ -15,35 +15,44 @@ df['start_seconds'] = pd.to_timedelta(df['start_timestamp']).dt.total_seconds()
 df['stop_seconds'] = pd.to_timedelta(df['stop_timestamp']).dt.total_seconds()
 
 def find_oscillations_with_timing(df):
-    """Find cases where action A is followed by B, then A again - WITH TIMING"""
-    oscillations = []
-    oscillation_timings = []  # NEW: Store timing info
-    video_ids = df['video_id'].unique()[:50] # Sample first 50 videos for speed
-    
+    oscillation_events = []
+    video_ids = df['video_id'].unique()[:50]
+
     for video_id in video_ids:
         video_df = df[df['video_id'] == video_id].sort_values('start_seconds')
+
         actions = video_df['action'].tolist()
-        times = video_df['start_seconds'].tolist()  # NEW: Get timestamps
-        
+        times = video_df['start_seconds'].tolist()
+
         for i in range(len(actions) - 2):
-            # The A -> B -> A pattern
             if actions[i] == actions[i+2] and actions[i] != actions[i+1]:
-                oscillations.append((actions[i], actions[i+1]))
-                
-                # NEW: Calculate duration of oscillation
-                time_span = times[i+2] - times[i]
-                oscillation_timings.append({
-                    'pattern': f"{actions[i]} ↔ {actions[i+1]}",
+
+                duration = times[i+2] - times[i]
+
+                oscillation_events.append({
+                    'video_id': video_id,
+                    'start_idx': i,
+                    'end_idx': i+2,
                     'action_a': actions[i],
                     'action_b': actions[i+1],
-                    'duration': time_span,
-                    'video_id': video_id
+                    'pattern': f"{actions[i]} ↔ {actions[i+1]}",
+                    'duration': duration
                 })
-    
-    return Counter(oscillations), pd.DataFrame(oscillation_timings)
 
-# Run analysis - NOW RETURNS TWO THINGS
-osc_counts, timing_df = find_oscillations_with_timing(df)
+    return pd.DataFrame(oscillation_events)
+
+# Run
+timing_df = find_oscillations_with_timing(df)
+timing_df.to_csv('../output/oscillation_events.csv', index=False)
+
+print("✓ Saved oscillation events with indices")
+
+# Recompute pattern counts
+osc_counts = Counter([
+    (row['action_a'], row['action_b'])
+    for _, row in timing_df.iterrows()
+])
+
 top_patterns = osc_counts.most_common(20)
 
 # NEW: Analyze timing
@@ -259,10 +268,8 @@ if len(timing_df) > 0 and 'Avg_Duration' in pattern_df.columns:
     ax6.tick_params(axis='both', labelsize=8)
 
 plt.tight_layout(rect=[0, 0.02, 1, 0.96])
-fig.savefig('../visualization/oscillating_pattern_dashboard_with_timing.png', dpi=300, bbox_inches='tight')
+fig.savefig('../visualization/oscillating_pattern_dashboard_with_timing_new.png', dpi=300, bbox_inches='tight')
 plt.show()
-
-print("\n✓ Dashboard saved: oscillating_pattern_dashboard_with_timing.png")
 
 # NEW: Create separate detailed timing report
 if len(timing_df) > 0:
@@ -287,12 +294,3 @@ if len(timing_df) > 0:
     for i, (pattern, row) in enumerate(pattern_summary.head(5).iterrows(), 1):
         print(f"   {i}. {pattern}")
         print(f"      Average: {row['Avg_Duration']:.1f}s | Occurrences: {int(row['Count'])}")
-    
-    # Key insight 3: Robot intervention strategy
-    print("\n🤖 ROBOT INTERVENTION STRATEGY:")
-    print("   IF oscillation detected AND duration > 30s:")
-    print("   → HIGH PRIORITY: Offer assistance immediately")
-    print("   IF oscillation detected AND duration 10-30s:")
-    print("   → MEDIUM PRIORITY: Monitor, offer help after 2nd cycle")
-    print("   IF oscillation detected AND duration < 10s:")
-    print("   → LOW PRIORITY: Normal behavior, no intervention")

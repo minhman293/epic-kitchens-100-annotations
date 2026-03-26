@@ -1,5 +1,4 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 from collections import Counter
 from pathlib import Path
 
@@ -8,48 +7,51 @@ df = pd.read_csv('../EPIC_100_train.csv')
 
 # Create verb-noun pairs
 df['action'] = df['verb'] + '(' + df['noun'] + ')'
+df['start_seconds'] = pd.to_timedelta(df['start_timestamp']).dt.total_seconds()
 
-# Get sequences of verb-noun pairs
-def get_action_sequences(df, window=3):
-    sequences = []
-    
+def get_action_sequences(df):
+    """Return structured sequences per video"""
+    all_sequences = []
+
     for video_id in df['video_id'].unique():
-        video_df = df[df['video_id'] == video_id].sort_values('start_timestamp')
+        video_df = df[df['video_id'] == video_id].sort_values('start_seconds')
+
         actions = video_df['action'].tolist()
-        
-        # Create sequences of length 'window'
+        times = video_df['start_seconds'].tolist()
+
+        for i in range(len(actions)):
+            all_sequences.append({
+                'video_id': video_id,
+                'index': i,
+                'action': actions[i],
+                'timestamp': times[i]
+            })
+
+    return pd.DataFrame(all_sequences)
+
+def get_window_sequences(df, window=3):
+    """Keep your original functionality (for frequency analysis)"""
+    sequences = []
+
+    for video_id in df['video_id'].unique():
+        video_df = df[df['video_id'] == video_id].sort_values('start_seconds')
+        actions = video_df['action'].tolist()
+
         for i in range(len(actions) - window + 1):
             seq = tuple(actions[i:i+window])
             sequences.append(seq)
-    
+
     return Counter(sequences)
 
-# Get 3-action sequences
-sequences = get_action_sequences(df, window=3)
+# Run
+sequence_df = get_action_sequences(df)
+sequence_df.to_csv('../output/sequence_indexed.csv', index=False)
 
-print("\n" + "="*80)
-print("TOP 30 VERB-NOUN SEQUENCES")
-print("="*80)
+print("✓ Saved indexed sequences")
 
-for seq, count in sequences.most_common(30):
-    print(f"{count:4} times: {' → '.join(seq)}")
+# Optional: keep your original analysis
+sequences = get_window_sequences(df, window=3)
 
-top_n = 20
-top_sequences = sequences.most_common(top_n)
-labels = [' -> '.join(seq) for seq, _ in top_sequences]
-counts = [count for _, count in top_sequences]
-
-plt.figure(figsize=(14, 8))
-plt.barh(range(len(labels)), counts, color='steelblue')
-plt.yticks(range(len(labels)), labels)
-plt.gca().invert_yaxis()
-plt.xlabel('Frequency')
-plt.ylabel('Action Sequence (window=3)')
-plt.title(f'Top {top_n} Action Sequences')
-plt.tight_layout()
-
-output_dir = Path('../visualization')
-output_dir.mkdir(parents=True, exist_ok=True)
-plt.savefig(output_dir / 'action_sequence_top20.png', dpi=300, bbox_inches='tight')
-
-plt.show()
+print("\nTOP 20 SEQUENCES:")
+for seq, count in sequences.most_common(20):
+    print(count, ":", " → ".join(seq))
