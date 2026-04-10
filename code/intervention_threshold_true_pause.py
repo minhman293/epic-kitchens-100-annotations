@@ -55,8 +55,8 @@ for i, action in enumerate(top_pause_actions):
     plt.axvspan(threshold, df_plot['true_pause'].max(), ymin=1 - (i+1)/15, ymax=1 - i/15, color='red', alpha=0.05)
 
 # Formatting
-plt.title("Action-Specific Intervention Thresholds: High-Struggle Verb-Noun Pairs", fontsize=18, pad=20)
-plt.xlabel("True Pause Duration (Seconds) \n [Dashed Line = Statistical Threshold for Robot Intervention]", fontsize=12)
+plt.title("Action-Specific Intervention Thresholds", fontsize=18, pad=20)
+plt.xlabel("Pause Duration (Seconds) \n [Dashed Line = Statistical Threshold for Robot Intervention]", fontsize=12)
 plt.ylabel("Micro-Action (Verb + Noun)", fontsize=12)
 plt.grid(axis='x', linestyle=':', alpha=0.4)
 plt.legend(loc='upper right')

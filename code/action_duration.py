@@ -28,27 +28,27 @@ fig = plt.figure(figsize=(20, 14))
 # Create a 2x2 grid, but we will use the bottom row as one big plot
 gs = gridspec.GridSpec(2, 2, height_ratios=[1, 1])
 
-plt.suptitle("Micro-Perspective Temporal Analysis: Physical Effort vs. Cognitive Struggle", 
+plt.suptitle("Temporal Analysis", 
              fontsize=24, y=0.96, fontweight='bold')
 
 # --- PLOT 1: Top Left (Most Frequent vs Duration) ---
 ax1 = fig.add_subplot(gs[0, 0])
 sns.boxplot(data=df_freq, x='duration', y='verb', ax=ax1, palette='Blues', order=top_freq_verbs)
-ax1.set_title("1. Physical Effort: Duration of Frequent Actions", fontsize=16, pad=15)
+ax1.set_title("1. Duration of Frequent Actions", fontsize=16, pad=15)
 ax1.set_xlabel("Seconds (Execution Time)", fontsize=12)
 ax1.set_ylabel("Verb", fontsize=12)
 
 # --- PLOT 2: Top Right (Most Frequent vs True Pause) ---
 ax2 = fig.add_subplot(gs[0, 1])
 sns.boxplot(data=df_freq, x='true_pause', y='verb', ax=ax2, palette='Oranges', order=top_freq_verbs)
-ax2.set_title("2. Cognitive Struggle: True Pause after Frequent Actions", fontsize=16, pad=15)
+ax2.set_title("2. Pause after Frequent Actions", fontsize=16, pad=15)
 ax2.set_xlabel("Seconds (Idle Time)", fontsize=12)
 ax2.set_ylabel("") # Remove y-label to reduce clutter
 
 # --- PLOT 3: Bottom (Actions with Longest True Pause - Spans both columns) ---
 ax3 = fig.add_subplot(gs[1, :]) # Use the entire bottom row
 sns.barplot(x=top_pause_verbs.values, y=top_pause_verbs.index, ax=ax3, palette='magma')
-ax3.set_title("3. Resumption Risk: Top 10 Verbs by Mean True Pause (Global)", fontsize=16, pad=15)
+ax3.set_title("3. Top 10 Verbs by Mean Pause (Global)", fontsize=16, pad=15)
 ax3.set_xlabel("Mean Seconds (Gap Before Next Action)", fontsize=12)
 ax3.set_ylabel("Verb", fontsize=12)
 
